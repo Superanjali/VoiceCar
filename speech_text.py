@@ -124,11 +124,14 @@ def record_to_file(path):
     wf.setframerate(RATE)
     wf.writeframes(data)
     wf.close()
+    return sample_width
 
+'''
 if __name__ == '__main__':
     print("please speak a word into the microphone")
     record_to_file('demo.wav')
     print("done - result written to demo.wav")
+'''
     
 # AI (Speech to text) #########################################################
 
@@ -137,7 +140,7 @@ YOUR_AUDIO_FILE = 'demo.wav'
 REGION = 'westus' # westus, eastasia, northeurope 
 MODE = 'interactive'
 LANG = 'en-US'
-FORMAT = 'simple'
+cognitive_FORMAT = 'simple'
 
 
 def handler():
@@ -162,7 +165,7 @@ def get_token():
 
 def get_text(token, audio):
     # Request that the Bing Speech API convert the audio to text
-    url = 'https://{0}.stt.speech.microsoft.com/speech/recognition/{1}/cognitiveservices/v1?language={2}&format={3}'.format(REGION, MODE, LANG, FORMAT)
+    url = 'https://{0}.stt.speech.microsoft.com/speech/recognition/{1}/cognitiveservices/v1?language={2}&format={3}'.format(REGION, MODE, LANG, cognitive_FORMAT)
     headers = {
         'Accept': 'application/json',
         'Ocp-Apim-Subscription-Key': YOUR_API_KEY,
@@ -183,5 +186,9 @@ def stream_audio_file(speech_file, chunk_size=1024):
                 break
             yield data
 
-if __name__ == '__main__':
-    print(handler())
+while True:
+    print("please speak a word into the microphone")
+    sample_length = record_to_file('demo.wav')
+    print('Record length: %d' % sample_length)
+    translation = handler()
+    print(translation)
