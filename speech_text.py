@@ -13,10 +13,13 @@ import wave
 import json
 import requests
 #import cv2
+import serial
 
+ser = serial.Serial('COM10', 9600, timeout=0)
 # Microphone to wav ###########################################################
 
-THRESHOLD = 500
+#THRESHOLD = 500
+THRESHOLD = 700
 CHUNK_SIZE = 1024
 FORMAT = pyaudio.paInt16
 RATE = 44100
@@ -185,10 +188,39 @@ def stream_audio_file(speech_file, chunk_size=1024):
             if not data:
                 break
             yield data
+            
+def sophsloop(com, rep, text, key, translation):
+    
+    for elem in com:
+        if translation.find(elem) >= 0:
+            print(text)
+            for i in range(rep):
+                ser.write(key)
+            continue
+
+back_left_list = ['reverse left'] #a
+back_right_list = ['reverse right'] #d
+forward_list = ['forward', 'front'] #w
+back_list = ['reverse', 'back'] #s
+forward_left_list = ['forward left'] #q
+forward_right_list = ['forward right'] #e
 
 while True:
-    print("please speak a word into the microphone")
-    sample_length = record_to_file('demo.wav')
-    print('Record length: %d' % sample_length)
+    print("GREEN. Please speak a word into the microphone")
+    record_to_file('demo.wav')
+    print('RED. Processing your command')
     translation = handler()
+    if translation is None:
+        #print('Sorry. I did not understand.')
+        continue
+    
+    translation = translation.lower()
     print(translation)
+    
+    #print('Unrecognized command')
+    sophsloop(back_left_list, 10, 'reverse left', b'a', translation)
+    sophsloop(back_right_list, 10, 'reverse right', b'd', translation)
+    sophsloop(forward_list, 10, 'front', b'w', translation)
+    sophsloop(back_list, 10, 'back', b's', translation)
+    sophsloop(forward_left_list, 10, 'left', b'q', translation)
+    sophsloop(forward_right_list, 10, 'right', b'e', translation)
