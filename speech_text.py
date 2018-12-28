@@ -14,8 +14,10 @@ import json
 import requests
 #import cv2
 import serial
+import speech_recognition as sr
 
-ser = serial.Serial('COM10', 9600, timeout=0)
+ARDUINO_SERIAL_PORT = 'COM11'
+
 # Microphone to wav ###########################################################
 
 #THRESHOLD = 500
@@ -189,38 +191,85 @@ def stream_audio_file(speech_file, chunk_size=1024):
                 break
             yield data
             
-def sophsloop(com, rep, text, key, translation):
-    
+def sophsloop(com, rep, text, key, translation):    
     for elem in com:
         if translation.find(elem) >= 0:
-            print(text)
+            print('Executing:' + text)
             for i in range(rep):
                 ser.write(key)
             continue
-
-back_left_list = ['reverse left'] #a
-back_right_list = ['reverse right'] #d
-forward_list = ['forward', 'front'] #w
-back_list = ['reverse', 'back'] #s
-forward_left_list = ['forward left'] #q
-forward_right_list = ['forward right'] #e
-
-while True:
-    print("GREEN. Please speak a word into the microphone")
-    record_to_file('demo.wav')
-    print('RED. Processing your command')
-    translation = handler()
-    if translation is None:
-        #print('Sorry. I did not understand.')
-        continue
+        
+def check_active(command, car, names):
+    valid = False
+    for name in names:
+        if command.find(name) >=0:
+            car = name
+            valid = True
+            break
+    if not valid:
+        for name in ['move','go']:
+            if command.find(name) >=0:
+                valid = True
+                break
+        print('Please specify car name or keywords move, go')
+    if car is None:
+        valid = False
+        print('Please set active car')
+    return car, valid
     
-    translation = translation.lower()
-    print(translation)
+# Main loop #################################################################
+
+if True:
+#try:
+    ser = serial.Serial(ARDUINO_SERIAL_PORT, 9600, timeout=0)
+
     
-    #print('Unrecognized command')
-    sophsloop(back_left_list, 10, 'reverse left', b'a', translation)
-    sophsloop(back_right_list, 10, 'reverse right', b'd', translation)
-    sophsloop(forward_list, 10, 'front', b'w', translation)
-    sophsloop(back_list, 10, 'back', b's', translation)
-    sophsloop(forward_left_list, 10, 'left', b'q', translation)
-    sophsloop(forward_right_list, 10, 'right', b'e', translation)
+    #back_left_list = ['reverse left'] #a
+    #back_right_list = ['reverse right'] #d
+    forward_list = ['forward', 'front', 'go'] #w
+    back_list = ['reverse', 'back', 'mac'] #s
+    forward_left_list = ['left'] #q
+    forward_right_list = ['right'] #e
+    active_car = None
+    car_names = ['bob','jack']
+
+
+    while True:
+        r = sr.Recognizer()
+        print("GREEN. Please speak a word into the microphone")
+        ser.write(b'b')
+        #record_to_file('demo.wav')
+        with sr.Microphone() as source:
+            audio = r.listen(source)
+        print('RED. Processing your command')
+        ser.write(b'r')
+        #translation = handler()
+        try:
+            translation = r.recognize_google(audio)
+        except:
+            translation = None
+            
+        if translation is None:
+            print('Sorry. I did not understand.')
+            continue
+        
+        translation = translation.lower()
+        print('Recieved:' + translation)
+        
+        active_car, valid = check_active(translation, active_car, car_names)
+        if not valid:
+            continue
+            
+        #print('Unrecognized command')
+        #sophsloop(back_left_list, 10, 'reverse left', b'a', translation)
+        #sophsloop(back_right_list, 10, 'reverse right', b'd', translation)
+        sophsloop(forward_list, 1, 'front', b'w', translation)
+        sophsloop(back_list, 1, 'back', b's', translation)
+        sophsloop(forward_left_list, 1, 'left', b'q', translation)
+        sophsloop(forward_right_list, 1, 'right', b'e', translation)
+
+'''        
+except SerialError as error:
+    print(error)
+    ser.close()
+'''
