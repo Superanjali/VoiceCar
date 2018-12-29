@@ -16,7 +16,7 @@ import requests
 import serial
 import speech_recognition as sr
 
-ARDUINO_SERIAL_PORT = 'COM11'
+ARDUINO_SERIAL_PORT = 'COM10'
 
 # Microphone to wav ###########################################################
 
@@ -219,8 +219,8 @@ def check_active(command, car, names):
     
 # Main loop #################################################################
 
-if True:
-#try:
+#if True:
+try:
     ser = serial.Serial(ARDUINO_SERIAL_PORT, 9600, timeout=0)
 
     
@@ -268,8 +268,7 @@ if True:
         sophsloop(forward_left_list, 1, 'left', b'q', translation)
         sophsloop(forward_right_list, 1, 'right', b'e', translation)
 
-'''        
-except SerialError as error:
+       
+except Exception as error:
     print(error)
     ser.close()
-'''
